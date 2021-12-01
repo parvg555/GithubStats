@@ -1,0 +1,5 @@
+credentials.json
+*__pycache__
+*.csv
+*.sqlite3
+__init__.py
