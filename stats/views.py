@@ -100,6 +100,3 @@ def profile(request,username):
     return render(request,'profile.html',{
         'username':username,
     })
-
-# https://www.analyticsvidhya.com/blog/2021/07/analyzing-popular-repositories-on-github/
-# https://towardsdatascience.com/github-user-insights-using-github-api-data-collection-and-analysis-5b7dca1ab214
