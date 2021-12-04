@@ -20,10 +20,10 @@
             var chart1 = new Chart(MostUsedLanguages,{
                 type:'bar',
                 data:{
-                    labels:[{%for data in list1%}'{{data}}',{%endfor%}],
+                    labels:[{%for data in language%}'{{data}}',{%endfor%}],
                     datasets:[{
                         label:'dataset1',
-                        data:[{%for data in list2%}{{data}},{%endfor%}],
+                        data:[{%for data in language_value%}{{data}},{%endfor%}],
                         backgroundColor: [
                             'rgba(255, 99, 132, 1)', 
                             'rgba(54, 162, 235, 1)',
@@ -69,10 +69,10 @@
             var chart2 = new Chart(StarsPerLanguage,{
                 type:'doughnut',
                 data:{
-                    labels:[{%for data in list1%}'{{data}}',{%endfor%}],
+                    labels:[{%for data in StarsPerLanguage_Language%}'{{data}}',{%endfor%}],
                     datasets:[{
                         label:'dataset1',
-                        data:[{%for data in list2%}{{data}},{%endfor%}],
+                        data:[{%for data in StarsPerLanguage_Score%}{{data}},{%endfor%}],
                         backgroundColor: [
                             'rgba(255, 99, 132, 1)', 
                             'rgba(54, 162, 235, 1)',
@@ -112,11 +112,11 @@
             var chart3 = new Chart(CommitsThisYear,{
                 type:'line',
                 data:{
-                    labels:[{%for data in month%}'{{data}}',{%endfor%}],
+                    labels:[{%for data in CommitsThisYear_Months%}'{{data}}',{%endfor%}],
                     datasets:[
                         {
                             label:'dataset1',
-                            data:[{%for data in value%}{{data}},{%endfor%}],
+                            data:[{%for data in CommitsThisYear_Value%}{{data}},{%endfor%}],
                             borderColor: 'rgba(255,0,0,1)',
                             backgroundColor: 'rgba(255,0,0,0.8)',
                             stack: 'combined',
@@ -124,7 +124,7 @@
                         },
                         {
                             label:'dataset1',
-                            data:[{%for data in value%}{{data}},{%endfor%}],
+                            data:[{%for data in CommitsThisYear_Value%}{{data}},{%endfor%}],
                             borderColor: 'rgba(0,0,255,1)',
                             stack: 'combined',
                         }
@@ -192,59 +192,38 @@
                         <div style="text-align: center;">
                             <h5>Top Repositories</h5>
                         </div>
-                        <div class="alert alert-primary" role="alert">
-                            <div style="width: 100%;white-space: nowrap; overflow: hidden;">
-                                Repository name
+                        {% for i in TopRepositories %}
+                        <a style = "text-decoration: none;" href="{{i.html_url}}">
+                            <div class="alert alert-primary" role="alert">
+                                <div style="width: 100%;white-space: nowrap; overflow: hidden;">
+                                    {{i.Name}}
+                                </div>
+                                <div style="font-size: 13px;">
+                                    <i class="fa fa-star"></i> {{i.Stars_count}} &nbsp;&nbsp;
+                                    <i class="fa fa-code-fork"></i> {{i.Forks_count}} &nbsp;&nbsp;
+                                    <i class="fa fa-eye"></i> {{i.Watchers_count}} &nbsp;&nbsp;
+                                    <i class="fas fa-bug"></i> {{i.Issues_count}}
+                                </div> 
                             </div>
-                            <div style="font-size: 13px;">
-                                url:   | language
-                            </div> 
-                        </div>
-                        <div class="alert alert-primary" role="alert">
-                            <div style="width: 100%;white-space: nowrap; overflow: hidden;">
-                                Repository name
-                            </div>
-                            <div style="font-size: 13px;">
-                                url:   | language
-                            </div> 
-                        </div>
-                        <div class="alert alert-primary" role="alert">
-                            <div style="width: 100%;white-space: nowrap; overflow: hidden;">
-                                Repository name
-                            </div>
-                            <div style="font-size: 13px;">
-                                url:   | language
-                            </div> 
-                        </div>
+                        </a>
+                        {% endfor %}
                     </div>
                     <div style="padding-left: 10px;padding-right: 10px;float: left;width: 50%;">
                         <div style="text-align: center;">
                             <h5>Recent Commits</h5>
                         </div>
-                        <div class="alert alert-primary" role="alert">
-                            <div style="width: 100%;white-space: nowrap; overflow: hidden;">
-                                Update A. Permutation Forgery cf rd 668 div2.cp
-                            </div>
-                            <div style="font-size: 13px;">
-                                date time
-                            </div> 
+                        {% for i in RecentCommits %}
+                        <a style = "text-decoration: none;" href="{{i.html_url}}">
+                            <div class="alert alert-info" role="alert">
+                                <div style="width: 100%;white-space: nowrap; overflow: hidden;">
+                                    {{i.Message}}
+                                </div>
+                                <div style="font-size: 13px;">
+                                    {{i.Date}}
+                                </div> 
                         </div>
-                        <div class="alert alert-primary" role="alert">
-                            <div style="width: 100%;white-space: nowrap; overflow: hidden;">
-                                Update A. Permutation Forgery cf rd 668 div2.cp
-                            </div>
-                            <div style="font-size: 13px;">
-                                date time
-                            </div> 
-                        </div>
-                        <div class="alert alert-primary" role="alert">
-                            <div style="width: 100%;white-space: nowrap; overflow: hidden;">
-                                Update A. Permutation Forgery cf rd 668 div2.cp
-                            </div>
-                            <div style="font-size: 13px;">
-                                date time
-                            </div> 
-                        </div>
+                        </a>
+                        {% endfor %}
                     </div>
                 </div>
                 <div style="float: left;height:340px;width: 50%;  ">

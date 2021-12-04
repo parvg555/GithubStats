@@ -1,9 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 import json
 import requests
 import numpy as np
 import pandas as pd
 import requests 
+from datetime import date,datetime
 
 
 def getdetails(username):
@@ -50,10 +51,12 @@ def getdetails(username):
         data.append(repo['stargazers_count'])
         data.append(repo['watchers_count'])
         data.append(repo['url'])
+        data.append(repo['html_url'])
         data.append(repo['commits_url'].split("{")[0])
         data.append(repo['url'] + '/languages')
         repos_information.append(data)
-    repos_df = pd.DataFrame(repos_information, columns = ['Id', 'Name', 'Description', 'Created on', 'Updated on', 'Owner', 'License', 'Includes wiki', 'Forks count', 'Issues count', 'Stars count', 'Watchers count','Repo URL', 'Commits URL', 'Languages URL'])
+    repos_df = pd.DataFrame(repos_information, columns = ['Id', 'Name', 'Description', 'Created on', 'Updated on', 'Owner', 'License', 'Includes wiki', 'Forks_count', 'Issues_count', 'Stars_count', 'Watchers_count','Repo URL','html_url', 'Commits URL', 'Languages URL'])
+    langdetails = {}
     for i in range(repos_df.shape[0]):
         response = requests.get(repos_df.loc[i, 'Languages URL'], auth = (username,token))
         response = response.json()
@@ -62,6 +65,7 @@ def getdetails(username):
             languages = []
             for key, value in response.items():
                 languages.append(str(str(key)+":"+str(value)))
+                langdetails[key] = langdetails.get(key, 0) + value
             languages = ', '.join(languages)
             repos_df.loc[i, 'Languages'] = languages
         else:
@@ -93,30 +97,116 @@ def getdetails(username):
     commits_df.to_csv('commits_info.csv', index = False)
 
 def profile(request,username):
-    #getdetails(username)
-
-    list1 = ['python','javascript','go','c++','c']
-    list2 = [10,20,30,40,20]
-    month = ['january','february','march','april','may','june','july','august','september','october','november','december']
-    value = [1,2,3,4,5,6,7,8,9,10,11,12]
+    getdetails(username)
+    #reads the csv file for the data extracted
     CommitsData= pd.read_csv("commits_info.csv")
     RepositoryData = pd.read_csv("repositorydata.csv")
+
+    #data is converted into dataframes
     CommitsData = pd.DataFrame(CommitsData)
     RepositoryData = pd.DataFrame(RepositoryData)
+
+    #creating url for streak api
     streak_url = "https://github-readme-streak-stats.herokuapp.com/?user="+username+"&theme=light&hide_border=true"
-    StarsEarned = RepositoryData['Stars count'].sum()
-    ForkCount = RepositoryData['Forks count'].sum()
-    IssuesCount = RepositoryData['Issues count'].sum()
-    WatchersCount = RepositoryData['Watchers count'].sum()
-    TotalCommits = CommitsData.shape[0]
     
+    #summing the various columns of tables to get the required data
+    StarsEarned = RepositoryData['Stars_count'].sum()
+    ForkCount = RepositoryData['Forks_count'].sum()
+    IssuesCount = RepositoryData['Issues_count'].sum()
+    WatchersCount = RepositoryData['Watchers_count'].sum()
+    TotalCommits = CommitsData.shape[0]
 
+    #extracting the details for repository and values for various languages
+    language = []
+    language_value = []
+    language_details = {}
+    for index,row in RepositoryData.iterrows():
+      temp = str(row['Languages'])
+      if temp == "nan":
+        continue
+      seprated_temp = temp.split(", ")
+      for i in seprated_temp:
+        temp2 = i.split(":")
+        language_details[temp2[0]] = language_details.get(temp2[0],0) + int(temp2[1])
+    sum = 0
+    for key,value in language_details.items():
+      sum+=value
+    for key,value in language_details.items():
+      language_details[key] = float((value/sum)*100)
+    language_details = dict(sorted(language_details.items(), key=lambda item: item[1],reverse = True))
+    i = 0
+    for key,value in language_details.items():
+      i+=1
+      if i>5:
+        break
+      language.append(key)
+      language_value.append(int(value))
+    
+    #extracting recent commits
+    CommitsData = CommitsData.sort_values(by = ['Date'], ascending= False)
+    RecentCommits = CommitsData[:3].to_dict('records')
+
+    #extracting most famous repositories
+    RepositoryData['Total'] = RepositoryData.iloc[:,8:12].sum(axis = 1, skipna = True)
+    RepositoryData = RepositoryData.sort_values(by=['Total'],ascending = False)
+    TopRepositories = RepositoryData[:3].to_dict('records')
+
+    StarsPerLanguage = {}
+    for index,row in RepositoryData.iterrows():
+      temp = str(row['Languages']).split(", ")
+      for item in temp:
+        if item != 'nan':
+          item = item.split(":")
+          StarsPerLanguage[item[0]] = StarsPerLanguage.get(item[0], 0) + int(row['Stars_count'])
+        break
+    StarsPerLanguage = dict(sorted(StarsPerLanguage.items(), key = lambda x:x[1], reverse = True)[:5])
+    StarsPerLanguage_Language = []
+    StarsPerLanguage_Score = []
+    for key,value in StarsPerLanguage.items():
+      StarsPerLanguage_Language.append(key)
+      StarsPerLanguage_Score.append(value)
+
+
+    #extracting the data of commits this year
+    CommitsThisYear = {'January':0,'February':0,'March':0,'April':0,'May':0,'June':0,'July':0,'August':0,'September':0,'October':0,'November':0,'December':0}
+    todays_date = date.today()
+    year = todays_date.year
+    print(year)
+    for index,row in CommitsData.iterrows():
+      temp = datetime.strptime(row['Date'], "%Y-%m-%dT%H:%M:%SZ")
+      if temp.year == todays_date.year:
+        if temp.month == 12:
+          CommitsThisYear['December'] = CommitsThisYear.get('December',0) + 1
+        if temp.month == 11:
+          CommitsThisYear['November'] = CommitsThisYear.get('November',0) + 1
+        if temp.month == 10:
+          CommitsThisYear['October'] = CommitsThisYear.get('October',0) + 1
+        if temp.month == 9:
+          CommitsThisYear['September'] = CommitsThisYear.get('September',0) + 1
+        if temp.month == 8:
+          CommitsThisYear['August'] = CommitsThisYear.get('August',0) + 1
+        if temp.month == 7:
+          CommitsThisYear['July'] = CommitsThisYear.get('July',0) + 1
+        if temp.month == 6:
+          CommitsThisYear['June'] = CommitsThisYear.get('June',0) + 1
+        if temp.month == 5:
+          CommitsThisYear['May'] = CommitsThisYear.get('May',0) + 1
+        if temp.month == 4:
+          CommitsThisYear['April'] = CommitsThisYear.get('April',0) + 1
+        if temp.month == 3:
+          CommitsThisYear['March'] = CommitsThisYear.get('March',0) + 1
+        if temp.month == 2:
+          CommitsThisYear['February'] = CommitsThisYear.get('February',0) + 1
+        if temp.month == 1:
+          CommitsThisYear['January'] = CommitsThisYear.get('January',0) + 1
+      else:
+        break
+    CommitsThisYear_Months = []
+    CommitsThisYear_Value = []
+    for month,value in CommitsThisYear.items():
+        CommitsThisYear_Months.append(month)
+        CommitsThisYear_Value.append(value)
     context = {
-        'list1':list1,
-        'list2':list2,
-        'month':month,
-        'value':value,
-
         'username':username,
         'streak_url':streak_url,
         'StarsEarned':StarsEarned,
@@ -124,5 +214,20 @@ def profile(request,username):
         'IssuesCount':IssuesCount,
         'WatchersCount':WatchersCount,
         'TotalCommits':TotalCommits,
+        'language':language,
+        'language_value':language_value,
+        'RecentCommits':RecentCommits,
+        'TopRepositories': TopRepositories,
+        'StarsPerLanguage_Language' : StarsPerLanguage_Language,
+        'StarsPerLanguage_Score':StarsPerLanguage_Score,
+        'CommitsThisYear_Months':CommitsThisYear_Months,
+        'CommitsThisYear_Value':CommitsThisYear_Value,
     }
     return render(request,'profile.html',context)
+
+
+def index(request):
+    if request.method == "POST":
+        username = request.POST.get('username')
+        return redirect('profile',username)
+    return render(request,'index.html',{})
