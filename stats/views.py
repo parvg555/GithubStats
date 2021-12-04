@@ -53,7 +53,6 @@ def getdetails(username):
         data.append(repo['commits_url'].split("{")[0])
         data.append(repo['url'] + '/languages')
         repos_information.append(data)
-
     repos_df = pd.DataFrame(repos_information, columns = ['Id', 'Name', 'Description', 'Created on', 'Updated on', 'Owner', 'License', 'Includes wiki', 'Forks count', 'Issues count', 'Stars count', 'Watchers count','Repo URL', 'Commits URL', 'Languages URL'])
     for i in range(repos_df.shape[0]):
         response = requests.get(repos_df.loc[i, 'Languages URL'], auth = (username,token))
@@ -62,14 +61,12 @@ def getdetails(username):
         if response != {}:
             languages = []
             for key, value in response.items():
-                languages.append(key)
+                languages.append(str(str(key)+":"+str(value)))
             languages = ', '.join(languages)
             repos_df.loc[i, 'Languages'] = languages
         else:
             repos_df.loc[i, 'Languages'] = ""    
-
     repos_df.to_csv('repositorydata.csv', index=False)
-
     commits_information = []
     for i in range(repos_df.shape[0]):
         url = repos_df.loc[i, 'Commits URL']
@@ -84,19 +81,48 @@ def getdetails(username):
                 commit_data.append(commit['sha'])
                 commit_data.append(commit['commit']['committer']['date'])
                 commit_data.append(commit['commit']['message'])
+                commit_data.append(commit['html_url'])
                 commits_information.append(commit_data)
             if (len(response) == 30):
                 page_no = page_no + 1
                 url = repos_df.loc[i, 'Commits URL'] + '?page=' + str(page_no)
             else:
                 break
-                
-    commits_df = pd.DataFrame(commits_information, columns = ['Repo Id', 'Commit Id', 'Date', 'Message'])
+
+    commits_df = pd.DataFrame(commits_information, columns = ['Repo Id', 'Commit Id', 'Date', 'Message','html_url'])
     commits_df.to_csv('commits_info.csv', index = False)
 
 def profile(request,username):
     #getdetails(username)
+
+    list1 = ['python','javascript','go','c++','c']
+    list2 = [10,20,30,40,20]
+    month = ['january','february','march','april','may','june','july','august','september','october','november','december']
+    value = [1,2,3,4,5,6,7,8,9,10,11,12]
+    CommitsData= pd.read_csv("commits_info.csv")
+    RepositoryData = pd.read_csv("repositorydata.csv")
+    CommitsData = pd.DataFrame(CommitsData)
+    RepositoryData = pd.DataFrame(RepositoryData)
+    streak_url = "https://github-readme-streak-stats.herokuapp.com/?user="+username+"&theme=light&hide_border=true"
+    StarsEarned = RepositoryData['Stars count'].sum()
+    ForkCount = RepositoryData['Forks count'].sum()
+    IssuesCount = RepositoryData['Issues count'].sum()
+    WatchersCount = RepositoryData['Watchers count'].sum()
+    TotalCommits = CommitsData.shape[0]
     
-    return render(request,'profile.html',{
+
+    context = {
+        'list1':list1,
+        'list2':list2,
+        'month':month,
+        'value':value,
+
         'username':username,
-    })
+        'streak_url':streak_url,
+        'StarsEarned':StarsEarned,
+        'ForkCount':ForkCount,
+        'IssuesCount':IssuesCount,
+        'WatchersCount':WatchersCount,
+        'TotalCommits':TotalCommits,
+    }
+    return render(request,'profile.html',context)
