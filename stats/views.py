@@ -97,7 +97,7 @@ def getdetails(username):
     commits_df.to_csv('commits_info.csv', index = False)
 
 def profile(request,username):
-    getdetails(username)
+    #getdetails(username)
     #reads the csv file for the data extracted
     CommitsData= pd.read_csv("commits_info.csv")
     RepositoryData = pd.read_csv("repositorydata.csv")
